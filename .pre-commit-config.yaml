@@ -1,0 +1,9 @@
+repos:
+
+  # Next hooks are Code Quality hooks.
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.14.0
+    hooks:
+      - id: pretty-format-golang
+        args:
+          - --autofix

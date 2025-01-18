@@ -1,0 +1,82 @@
+name: Build Aplication
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+
+jobs:
+  Package:
+    name: Build Test And Push Image
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: benjlevesque/short-sha@v3.0
+        id: short-sha
+        with:
+          length: 7
+      
+      - name: Setup GoLang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.23.3'
+
+      - name: Build And Test
+        shell: bash
+        run: |
+          go test -race -short -cover ./internal/... -coverprofile=coverage.out
+      
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ steps.short-sha.outputs.sha }}
+        with:
+          projectBaseDir: ./
+          args: >            
+            -Dsonar.projectVersion=${{ env.SHA }}
+            -Dsonar.language=go
+            -Dsonar.qualitygate.wait=true                        
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, Tag, Docker Image
+        env:
+          REGISTRY: ghcr.io
+          REPOSITORY: ${{ github.repository }}
+          IMAGE_TAG: ${{ steps.short-sha.outputs.sha }}
+        run: |
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.21.0
+        with:
+          image-ref: "ghcr.io/${{ github.repository }}:${{ steps.short-sha.outputs.sha }}"
+          format: 'table'
+          scan-type: 'image'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Push docker image to Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        env:
+          REGISTRY: ghcr.io
+          REPOSITORY: ${{ github.repository }}
+          IMAGE_TAG: ${{ steps.short-sha.outputs.sha }}
