@@ -86,7 +86,7 @@ Follow the steps described in the [official documentation](https://github.com/sw
 ### Generate
 
 ```shell
- swag init -g cmd/http/main.go 
+ swag init -g cmd/sqs/main.go 
 ```
 
 ### Access the documentation

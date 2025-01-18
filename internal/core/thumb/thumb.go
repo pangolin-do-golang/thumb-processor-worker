@@ -1,13 +1,16 @@
 package thumb
 
-import (
-	"github.com/google/uuid"
-)
+type Thumb struct{}
 
-type Thumb struct {
-	ID uuid.UUID `json:"id"`
+type Event struct {
+	Video string `json:"video"`
+}
+
+type Adapter interface {
+	Listen() chan []Event
 }
 
 type IThumbService interface {
-	GetThumb(id uuid.UUID) (*Thumb, error)
+	StartQueue(adapter Adapter)
+	ProcessVideo() error
 }

@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o web cmd/http/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o web cmd/sqs/main.go
 
 # Stage 2: Create non-root user in a complete image
 FROM alpine:3.19.1 as security_provider

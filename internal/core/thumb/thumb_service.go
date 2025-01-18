@@ -1,18 +1,22 @@
 package thumb
 
-import (
-	"github.com/google/uuid"
-)
+import "fmt"
 
 type Service struct {
 }
 
-func NewThumbService() *Service {
+func NewService() IThumbService {
 	return &Service{}
 }
 
-func (s *Service) GetThumb(_ uuid.UUID) (*Thumb, error) {
-	var thumb *Thumb
+func (s Service) StartQueue(adapter Adapter) {
+	for {
+		for _, event := range <-adapter.Listen() {
+			fmt.Println("processando evento do vídeo", event.Video)
+		}
+	}
+}
 
-	return thumb, nil
+func (s Service) ProcessVideo() error {
+	return nil
 }
