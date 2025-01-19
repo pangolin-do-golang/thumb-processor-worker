@@ -3,14 +3,20 @@ package thumb
 type Thumb struct{}
 
 type Event struct {
-	Video string `json:"video"`
+	Video    string `json:"video"`
+	Metadata interface{}
 }
 
-type Adapter interface {
+type QueueAdapter interface {
 	Listen() chan []Event
+	Ack(Event)
 }
 
-type IThumbService interface {
-	StartQueue(adapter Adapter)
+type StorageAdapter interface {
+	UploadThumb() error
+}
+
+type Processor interface {
+	StartQueue()
 	ProcessVideo() error
 }
