@@ -1,9 +1,11 @@
-package storage
+package s3
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
 	"log"
@@ -11,17 +13,25 @@ import (
 	"time"
 )
 
-type S3Adapter struct {
+type Adapter struct {
 	client *s3.Client
 }
 
-func NewS3Adapter(client *s3.Client) *S3Adapter {
-	return &S3Adapter{
-		client: client,
+func NewAdapter() *Adapter {
+	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		fmt.Println("Couldn't load default configuration. Have you set up your AWS account?")
+		fmt.Println(err)
+	}
+
+	s3Client := s3.NewFromConfig(sdkConfig)
+
+	return &Adapter{
+		client: s3Client,
 	}
 }
 
-func (a *S3Adapter) UploadThumb() error {
+func (a *Adapter) UploadThumb() error {
 	var (
 		ctx        context.Context
 		bucketName string

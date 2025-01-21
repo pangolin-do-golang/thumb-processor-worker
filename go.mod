@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.73.2
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.37.9
+	github.com/aws/smithy-go v1.22.1
 	github.com/gin-gonic/gin v1.10.0
 	github.com/stretchr/testify v1.10.0
 	github.com/swaggo/files v1.0.1
@@ -31,7 +32,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.11 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.9 // indirect
-	github.com/aws/smithy-go v1.22.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
