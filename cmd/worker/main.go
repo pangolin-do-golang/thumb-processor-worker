@@ -12,7 +12,7 @@ func main() {
 
 	done := make(chan struct{}, 1)
 	queueAdapter := sqs.NewAdapter()
-	storageAdapter := s3.NewAdapter()
+	storageAdapter := s3.NewAdapter("")
 
 	s := thumb.NewService(queueAdapter, storageAdapter)
 	go s.StartQueue()
