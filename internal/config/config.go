@@ -18,7 +18,7 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	cfg := &Config{}
+	cfg := Config{}
 	err := env.Parse(&cfg)
-	return cfg, err
+	return &cfg, err
 }
