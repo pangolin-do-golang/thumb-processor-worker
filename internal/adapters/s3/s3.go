@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
+	cfg "github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
 	"io"
 	"log"
 	"os"
@@ -19,19 +20,18 @@ type Adapter struct {
 	bucket string
 }
 
-func NewAdapter(bucket string) *Adapter {
+func NewAdapter(c *cfg.Config) (*Adapter, error) {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		fmt.Println("Couldn't load default configuration. Have you set up your AWS account?")
-		fmt.Println(err)
+		return nil, err
 	}
 
 	s3Client := s3.NewFromConfig(sdkConfig)
 
 	return &Adapter{
 		client: s3Client,
-		bucket: bucket,
-	}
+		bucket: c.S3.Bucket,
+	}, nil
 }
 
 func (a *Adapter) DownloadFile(objectKey, filePath string) error {

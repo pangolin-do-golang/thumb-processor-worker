@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	cfg "github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/domain"
 	"log"
 )
@@ -16,20 +17,22 @@ type Adapter struct {
 	client   *sqs.Client
 	messages []types.Message
 	queue    chan []domain.Event
+	url      string
 }
 
-func NewAdapter() *Adapter {
+func NewAdapter(c *cfg.Config) (*Adapter, error) {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		log.Println("couldn't load default configuration", err)
+		return nil, err
 	}
 
 	sqsClient := sqs.NewFromConfig(sdkConfig)
 
 	return &Adapter{
+		url:    c.SQS.QueueURL,
 		client: sqsClient,
 		queue:  make(chan []domain.Event),
-	}
+	}, nil
 }
 
 func (a *Adapter) appendMessages(mes []types.Message) {
