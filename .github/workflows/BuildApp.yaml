@@ -32,6 +32,9 @@ jobs:
         shell: bash
         run: |
           go test -race -short -cover ./internal/... -coverprofile=coverage.out
+          
+      - name: Check Coverage File Content
+        run: head coverage.out # Verify coverage data
       
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
@@ -42,9 +45,10 @@ jobs:
         with:
           projectBaseDir: ./
           args: >            
-            -Dsonar.projectVersion=${{ env.SHA }}
+            -Dsonar.projectVersion=${{ github.SHA }}
             -Dsonar.language=go
-            -Dsonar.qualitygate.wait=true                        
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.go.coverage.reportPaths=coverage.out
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
