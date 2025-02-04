@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/ffmpeg"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/s3"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/sqs"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/zip"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/core/thumb"
 	"log"
@@ -27,7 +29,10 @@ func main() {
 		log.Fatalln("failed to start storage adapter", err)
 	}
 
-	s := thumb.NewService(queueAdapter, storageAdapter)
+	compressor := zip.New()
+	ff := ffmpeg.New()
+
+	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff)
 	go s.StartQueue()
 
 	<-done

@@ -56,7 +56,7 @@ func (a *Adapter) Listen() chan []domain.Event {
 	go func() {
 		for {
 			result, err := a.client.ReceiveMessage(context.TODO(), &sqs.ReceiveMessageInput{
-				QueueUrl: aws.String("https://sqs.us-east-1.amazonaws.com/184085230178/thumbs"),
+				QueueUrl: aws.String(a.url),
 			})
 			if err != nil {
 				log.Println("couldn't get messages from worker", err)
@@ -70,7 +70,7 @@ func (a *Adapter) Listen() chan []domain.Event {
 
 func (a *Adapter) Ack(event domain.Event) {
 	_, err := a.client.DeleteMessage(context.TODO(), &sqs.DeleteMessageInput{
-		QueueUrl:      aws.String("https://sqs.us-east-1.amazonaws.com/184085230178/thumbs"),
+		QueueUrl:      aws.String(a.url),
 		ReceiptHandle: event.Metadata.(types.Message).ReceiptHandle,
 	})
 	if err != nil {

@@ -1,4 +1,4 @@
-package compressor
+package zip
 
 import (
 	"archive/zip"
@@ -9,7 +9,13 @@ import (
 	"strings"
 )
 
-func Zip(sourceDir, zipFileName string) error {
+type Service struct{}
+
+func New() *Service {
+	return &Service{}
+}
+
+func (s *Service) Compress(sourceDir, zipFileName string) error {
 	// Read the files from the source directory
 	files, err := ioutil.ReadDir(sourceDir)
 	if err != nil {
