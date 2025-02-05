@@ -1,5 +1,8 @@
 # Stage 1: Build
-FROM golang:1.23.3-alpine AS builder
+FROM golang:1.23-alpine AS builder
+
+# Install ffmpeg
+RUN apk add --no-cache ffmpeg
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -14,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o web cmd/http/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o worker cmd/worker/main.go
 
 # Stage 2: Create non-root user in a complete image
 FROM alpine:3.19.1 as security_provider
@@ -22,6 +25,9 @@ FROM alpine:3.19.1 as security_provider
 # Create a non-root group and user
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
+
+# Install ffmpeg
+RUN apk add --no-cache ffmpeg
 
 # Stage 3: Run in a scratch image
 FROM scratch as production
@@ -33,11 +39,10 @@ COPY --from=security_provider /etc/passwd /etc/passwd
 USER nonroot
 
 # Copy only the binary from the build stage to the final image
-COPY --from=builder /app/web /
-COPY --from=builder /app/docs/* /docs/
+COPY --from=builder /app/worker /
 
-#Expose ports
-EXPOSE 8080
+# Copy ffmpeg binary
+COPY --from=security_provider /usr/bin/ffmpeg /usr/bin/ffmpeg
 
-#Run the web usecases on container startup
-CMD ["./web"]
+# Run the web usecases on container startup
+CMD ["./worker"]
