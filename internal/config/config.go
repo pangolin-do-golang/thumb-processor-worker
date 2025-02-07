@@ -12,9 +12,17 @@ type SQS struct {
 	QueueURL string `env:"SQS_QUEUE_URL"`
 }
 
+type Smtp struct {
+	Host     string `env:"SMTP_HOST"`
+	Port     string `env:"SMTP_PORT"`
+	Password string `env:"SMTP_PASSWORD"`
+	From     string `env:"SMTP_FROM"`
+}
+
 type Config struct {
-	S3  S3
-	SQS SQS
+	S3   S3
+	SQS  SQS
+	Smtp Smtp
 }
 
 func Load() (*Config, error) {

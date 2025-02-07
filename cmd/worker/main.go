@@ -7,6 +7,7 @@ import (
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/sqs"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/zip"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/core/smtp_email"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/core/thumb"
 	"log"
 )
@@ -32,7 +33,9 @@ func main() {
 	compressor := zip.New()
 	ff := ffmpeg.New()
 
-	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff)
+	smtp := smtp_email.NewSmtpService(cfg.Smtp)
+
+	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff, smtp)
 	go s.StartQueue()
 
 	<-done

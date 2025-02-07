@@ -1,8 +1,11 @@
 package thumb
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/email"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/domain"
+	"html/template"
 	"log"
 	"os"
 )
@@ -37,6 +40,7 @@ type Service struct {
 	storageAdapter    StorageAdapter
 	CompressorAdapter CompressorAdapter
 	VideoProcessor    VideoProcessor
+	EmailAdapter      email.Adapter
 }
 
 func NewService(
@@ -44,12 +48,14 @@ func NewService(
 	storageAdapter StorageAdapter,
 	compressor CompressorAdapter,
 	processor VideoProcessor,
+	emailAdapter email.Adapter,
 ) *Service {
 	return &Service{
 		queueAdapter:      queueAdapter,
 		storageAdapter:    storageAdapter,
 		CompressorAdapter: compressor,
 		VideoProcessor:    processor,
+		EmailAdapter:      emailAdapter,
 	}
 }
 
@@ -66,13 +72,13 @@ func (s Service) processEvent(event domain.Event) {
 	zipPath, err := s.processVideo(event)
 	if err != nil {
 		log.Println("erro ao processar vídeo:", err)
-		// enviar e-mail
+		_ = s.sendFailToProcessEmail(event.OwnerEmail)
 		return
 	}
 
 	if err = s.storageAdapter.UploadFile(*zipPath, event.ID+"/thumbs.zip"); err != nil {
 		log.Println("erro ao enviar thumbs para o storage:", err)
-		// enviar e-mail
+		_ = s.sendFailToProcessEmail(event.OwnerEmail)
 		return
 	}
 
@@ -109,4 +115,34 @@ func (s Service) processVideo(e domain.Event) (thumbsZipPath *string, err error)
 
 	path := thumbsDir + "/thumbs.zip"
 	return &path, nil
+}
+
+func (s Service) sendFailToProcessEmail(to string) error {
+
+	templatePath := "./fail_to_process_email_template.html"
+
+	templ, err := template.ParseFiles(templatePath)
+
+	if err != nil {
+		fmt.Println("erro ao parsear template:", err)
+		return err
+	}
+
+	var templateBuf bytes.Buffer
+
+	if err = templ.Execute(&templateBuf, nil); err != nil {
+		fmt.Println("erro ao executar template:", err)
+		return err
+	}
+
+	compiledHTML := templateBuf.String()
+
+	err = s.EmailAdapter.Send([]string{to}, "Erro ao Processar o Arquivo", compiledHTML)
+
+	if err != nil {
+		fmt.Println("erro ao enviar email:", err)
+		return err
+	}
+
+	return nil
 }
