@@ -54,12 +54,23 @@ func (m *MockVideoProcessor) ExtractThumbnails(videoPath, thumbsDestDir string) 
 	return args.Error(0)
 }
 
+type MockEmailAdapter struct {
+	mock.Mock
+}
+
+func (m *MockEmailAdapter) Send(to []string, subject, body string) error {
+	args := m.Called(to, subject, body)
+	return args.Error(0)
+
+}
+
 func TestProcessVideo_Success(t *testing.T) {
 	queueAdapter := new(MockQueueAdapter)
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	emailAdapter := new(MockEmailAdapter)
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, emailAdapter)
 
 	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
 
@@ -82,11 +93,14 @@ func TestProcessVideo_FailToDownloadFile(t *testing.T) {
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	emailAdapter := new(MockEmailAdapter)
+
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, emailAdapter)
 
 	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
 
 	storageAdapter.On("DownloadFile", event.Path, "./videos/123/video").Return(fmt.Errorf("download error"))
+	emailAdapter.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	err := os.MkdirAll("./videos/123/thumbs", os.ModePerm)
 	assert.NoError(t, err)
@@ -105,7 +119,9 @@ func TestProcessVideo_FailToUploadFile(t *testing.T) {
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	emailAdapter := new(MockEmailAdapter)
+
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, emailAdapter)
 
 	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
 
@@ -113,6 +129,7 @@ func TestProcessVideo_FailToUploadFile(t *testing.T) {
 	videoProcessor.On("ExtractThumbnails", "./videos/123/video", "./videos/123/thumbs/thumb_%04d.png").Return(nil)
 	compressorAdapter.On("Compress", "./videos/123/thumbs", "thumbs.zip").Return(nil)
 	storageAdapter.On("UploadFile", "./videos/123/thumbs/thumbs.zip", "123/thumbs.zip").Return(fmt.Errorf("upload error"))
+	emailAdapter.On("Send", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	service.processEvent(event)
 
