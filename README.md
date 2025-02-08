@@ -29,23 +29,8 @@ go test -cover ./...
 
 To correctly use the project, it is necessary to define a .env file, with the values for the envs:
 
-* DB_USERNAME
-* DB_PASSWORD
-* DB_HOST
-* DB_NAME
-* DB_PORT
-* THUMB_SERVICE_URL
-
-We recommend using for development the following values:
-
-```
-DB_USERNAME=user
-DB_PASSWORD=pass
-DB_HOST=pgsql
-DB_NAME=postgres
-DB_PORT=5432
-THUMB_SERVICE_URL=http://localhost:<PORT_SERVICE_IS_RUNNING>
-```
+* S3_BUCKET
+* SQS_QUEUE_URL
 
 ## Executing with Docker (Compose)
 
@@ -70,8 +55,9 @@ Go to http://localhost:8080/swagger/index.html#/ after the application is runnin
 
 - [Go](https://go.dev/)
 - [Gin Web Framework](https://gin-gonic.com/) - Routes, JSON validation, Error management, Middleware support
-- [PostgresSQL](https://www.postgresql.org/) - Database
-- [swag](https://github.com/swaggo/swag) - Tool to generate swagger documentation
+- [S3](https://aws.amazon.com/pt/s3/) - Object storage service that stores data as objects in buckets
+- [SQS](https://aws.amazon.com/pt/s3/) - Managed message queues for microservices, distributed systems, and serverless applications
+- [swag](https://aws.amazon.com/pt/sqs/) - Tool to generate swagger documentation
 - [docker](https://www.docker.com/) - Containerization tool
 - [docker-compose](https://docs.docker.com/compose/) - Tool to define and run multi-container Docker applications
 
@@ -100,6 +86,4 @@ The documentation can be founded at the path `/docs/swagger.yaml` or accessing t
     - `core`: Directory that contains the application's core business logic.
         - `thumb`: Directory contains definition of the entity's heights, interfaces, repository and service of the entity Thumb.
     - `adapters`: Directory to contain external services that will interact with the application core.
-        - `db`: Directory contains the implementation of the repositories.
-        - `rest`: Directory that contains the definition of the application's controllers and handlers for manipulating data provided by the controller
     - `domainerrors`: Directory that contains the definition of the application's domain errors.
