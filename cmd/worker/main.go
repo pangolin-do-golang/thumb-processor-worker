@@ -11,6 +11,12 @@ import (
 	"log"
 )
 
+// @title Thumb processor worker
+// @version 0.1.0
+// @description Hackathon
+
+// @host localhost:8080
+// @BasePath /
 func main() {
 	fmt.Println("starting application in worker mode")
 
