@@ -68,30 +68,30 @@ func (a *Adapter) UploadFile(filePath, objectKey string) error {
 	ctx := context.TODO()
 	file, err := os.Open(filePath)
 	if err != nil {
-		log.Printf("Couldn't open file %v to upload. Here's why: %v\n", filePath, err)
-	} else {
-		defer file.Close()
-		_, err = a.client.PutObject(ctx, &s3.PutObjectInput{
-			Bucket: aws.String(a.bucket),
-			Key:    aws.String(objectKey),
-			Body:   file,
-		})
-		if err != nil {
-			var apiErr smithy.APIError
-			if errors.As(err, &apiErr) && apiErr.ErrorCode() == "EntityTooLarge" {
-				log.Printf("Error while uploading object to %s. The object is too large.\n"+
-					"To upload objects larger than 5GB, use the S3 console (160GB max)\n"+
-					"or the multipart upload API (5TB max).", a.bucket)
-			} else {
-				log.Printf("Couldn't upload file %v to %v:%v. Here's why: %v\n",
-					filePath, a.bucket, objectKey, err)
-			}
+		return fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = a.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: aws.String(a.bucket),
+		Key:    aws.String(objectKey),
+		Body:   file,
+	})
+	if err != nil {
+		var apiErr smithy.APIError
+		if errors.As(err, &apiErr) && apiErr.ErrorCode() == "EntityTooLarge" {
+			log.Printf("Error while uploading object to %s. The object is too large.\n"+
+				"To upload objects larger than 5GB, use the S3 console (160GB max)\n"+
+				"or the multipart upload API (5TB max).", a.bucket)
 		} else {
-			err = s3.NewObjectExistsWaiter(a.client).Wait(
-				ctx, &s3.HeadObjectInput{Bucket: aws.String(a.bucket), Key: aws.String(objectKey)}, time.Minute)
-			if err != nil {
-				log.Printf("Failed attempt to wait for object %s to exist.\n", objectKey)
-			}
+			log.Printf("Couldn't upload file %v to %v:%v. Here's why: %v\n",
+				filePath, a.bucket, objectKey, err)
+		}
+	} else {
+		err = s3.NewObjectExistsWaiter(a.client).Wait(
+			ctx, &s3.HeadObjectInput{Bucket: aws.String(a.bucket), Key: aws.String(objectKey)}, time.Minute)
+		if err != nil {
+			log.Printf("Failed attempt to wait for object %s to exist.\n", objectKey)
 		}
 	}
 	return err

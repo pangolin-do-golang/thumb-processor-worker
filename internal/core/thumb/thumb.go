@@ -27,9 +27,8 @@ type VideoProcessor interface {
 	ExtractThumbnails(videoPath, thumbsDestDir string) error
 }
 
-type Processor interface {
-	StartQueue()
-	ProcessVideo() error
+type SyncStatusAdapter interface {
+	ChangeStatus(status string, e domain.Event) error
 }
 
 type Service struct {
@@ -37,6 +36,7 @@ type Service struct {
 	storageAdapter    StorageAdapter
 	CompressorAdapter CompressorAdapter
 	VideoProcessor    VideoProcessor
+	SyncStatusAdapter SyncStatusAdapter
 }
 
 func NewService(
@@ -44,12 +44,14 @@ func NewService(
 	storageAdapter StorageAdapter,
 	compressor CompressorAdapter,
 	processor VideoProcessor,
+	syncStatus SyncStatusAdapter,
 ) *Service {
 	return &Service{
 		queueAdapter:      queueAdapter,
 		storageAdapter:    storageAdapter,
 		CompressorAdapter: compressor,
 		VideoProcessor:    processor,
+		SyncStatusAdapter: syncStatus,
 	}
 }
 
@@ -62,21 +64,24 @@ func (s Service) StartQueue() {
 }
 
 func (s Service) processEvent(event domain.Event) {
-	fmt.Println("processando evento do vídeo", event.Path)
+	fmt.Println("processando evento do vídeo", event.VideoPath)
 	zipPath, err := s.processVideo(event)
 	if err != nil {
 		log.Println("erro ao processar vídeo:", err)
-		// enviar e-mail
+		s.SyncStatusAdapter.ChangeStatus("failed", event)
 		return
 	}
 
 	if err = s.storageAdapter.UploadFile(*zipPath, event.ID+"/thumbs.zip"); err != nil {
 		log.Println("erro ao enviar thumbs para o storage:", err)
-		// enviar e-mail
+		s.SyncStatusAdapter.ChangeStatus("failed", event)
 		return
 	}
 
 	s.queueAdapter.Ack(event)
+	if err = s.SyncStatusAdapter.ChangeStatus("complete", event); err != nil {
+		log.Println("erro ao atualizar status do vídeo:", err)
+	}
 	// deixar pro queueAdapter ou abstrair atualização na api (que finalizou o processamento)
 	fmt.Println("evento processado")
 }
@@ -92,7 +97,7 @@ func (s Service) processVideo(e domain.Event) (thumbsZipPath *string, err error)
 	}
 
 	videoPath := videoDir + "/video"
-	if err = s.storageAdapter.DownloadFile(e.Path, videoPath); err != nil {
+	if err = s.storageAdapter.DownloadFile(e.VideoPath, videoPath); err != nil {
 		return
 	}
 

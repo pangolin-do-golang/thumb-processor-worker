@@ -20,6 +20,22 @@ type Adapter struct {
 	url      string
 }
 
+type ThumbProcess struct {
+	ID        string            `json:"id"`
+	Video     ThumbProcessVideo `json:"video"`
+	Status    string            `json:"status"`
+	Error     string            `json:"error,omitempty"`
+	Thumbnail ThumbProcessThumb `json:"thumbnail"`
+}
+
+type ThumbProcessVideo struct {
+	Path string `json:"path"`
+}
+
+type ThumbProcessThumb struct {
+	Path string `json:"url"`
+}
+
 func NewAdapter(c *cfg.Config) (*Adapter, error) {
 	sdkConfig, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -37,7 +53,8 @@ func NewAdapter(c *cfg.Config) (*Adapter, error) {
 
 func (a *Adapter) appendMessages(mes []types.Message) {
 	for _, m := range mes {
-		var e domain.Event
+		fmt.Println("recebido evento", *m.Body)
+		var e ThumbProcess
 		if err := json.Unmarshal([]byte(*m.Body), &e); err != nil {
 			log.Println("couldn't unmarshal message", *m.Body, err)
 			a.Ack(domain.Event{Metadata: m})
@@ -45,9 +62,9 @@ func (a *Adapter) appendMessages(mes []types.Message) {
 		}
 
 		a.queue <- []domain.Event{{
-			ID:       e.ID,
-			Path:     e.Path,
-			Metadata: m,
+			ID:        e.ID,
+			VideoPath: e.Video.Path,
+			Metadata:  m,
 		}}
 	}
 }

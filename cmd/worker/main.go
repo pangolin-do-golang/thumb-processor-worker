@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/ffmpeg"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/notifier"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/s3"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/sqs"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/zip"
@@ -31,8 +32,9 @@ func main() {
 
 	compressor := zip.New()
 	ff := ffmpeg.New()
+	syncStatus := notifier.New(cfg)
 
-	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff)
+	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff, syncStatus)
 	go s.StartQueue()
 
 	<-done
