@@ -87,3 +87,19 @@ The documentation can be founded at the path `/docs/swagger.yaml` or accessing t
         - `thumb`: Directory contains definition of the entity's heights, interfaces, repository and service of the entity Thumb.
     - `adapters`: Directory to contain external services that will interact with the application core.
     - `domainerrors`: Directory that contains the definition of the application's domain errors.
+
+## DDD with event storm
+
+The team chose to use [Miro](https://miro.com/) to document this deliverable, available at the [link](https://miro.com/app/board/uXjVLr7Fxbo=/).
+
+The diagram contains:
+
+* System documentation in DDD with Event Storm
+* Caption for the ubiquitous language used
+* Additional details to understand the proposed resolution
+* Worker  flow
+* API flow
+
+![ubiquitous language](./assets/linguagem%20ubiqua.png)
+
+![event storm](./assets/event%20storm.png)
