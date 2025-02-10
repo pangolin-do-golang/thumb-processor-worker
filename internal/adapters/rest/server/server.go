@@ -18,6 +18,14 @@ func NewRestServer(_ *RestServerOptions) *RestServer {
 	return &RestServer{}
 }
 
+// RegisterHealthCheck registers the health check endpoint with the given Gin engine.
+//
+// @Tags Health Check
+// @Summary      Health Check
+// @Description  Checks the health status of the application.
+// @Produce      json
+// @Success     200 {object} map[string]interface{}
+// @Router      /health [get]
 func (rs RestServer) Serve() {
 	r := gin.Default()
 	r.Use(middleware.CorsMiddleware())
