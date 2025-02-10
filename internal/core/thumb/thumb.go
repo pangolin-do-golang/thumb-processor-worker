@@ -115,33 +115,3 @@ func (s Service) processVideo(e domain.Event) (thumbsZipPath *string, err error)
 	path := thumbsDir + "/thumbs.zip"
 	return &path, nil
 }
-
-func (s Service) sendFailToProcessEmail(to string) error {
-
-	templatePath := "./fail_to_process_email_template.html"
-
-	templ, err := template.ParseFiles(templatePath)
-
-	if err != nil {
-		fmt.Println("erro ao parsear template:", err)
-		return err
-	}
-
-	var templateBuf bytes.Buffer
-
-	if err = templ.Execute(&templateBuf, nil); err != nil {
-		fmt.Println("erro ao executar template:", err)
-		return err
-	}
-
-	compiledHTML := templateBuf.String()
-
-	err = s.EmailAdapter.Send([]string{to}, "Erro ao Processar o Arquivo", compiledHTML)
-
-	if err != nil {
-		fmt.Println("erro ao enviar email:", err)
-		return err
-	}
-
-	return nil
-}

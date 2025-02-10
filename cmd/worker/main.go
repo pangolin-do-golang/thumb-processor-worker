@@ -5,10 +5,10 @@ import (
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/ffmpeg"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/notifier"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/s3"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/smtp"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/sqs"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/zip"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
-	"github.com/pangolin-do-golang/thumb-processor-worker/internal/core/smtp_email"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/core/thumb"
 	"log"
 )
@@ -33,11 +33,10 @@ func main() {
 
 	compressor := zip.New()
 	ff := ffmpeg.New()
-	syncStatus := notifier.New(cfg)
+	smtpAdapter := smtp.New(&cfg.Smtp)
+	syncStatus := notifier.New(cfg, smtpAdapter)
 
-	smtp := smtp_email.NewSmtpService(cfg.Smtp)
-
-	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff, smtp)
+	s := thumb.NewService(queueAdapter, storageAdapter, compressor, ff, syncStatus)
 	go s.StartQueue()
 
 	<-done

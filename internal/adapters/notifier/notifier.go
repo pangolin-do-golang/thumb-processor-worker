@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pangolin-do-golang/thumb-processor-worker/internal/adapters/smtp"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/config"
 	"github.com/pangolin-do-golang/thumb-processor-worker/internal/domain"
 	"net/http"
 )
 
 type Adapter struct {
-	url string
+	url   string
+	Email smtp.EmailService
 }
 
 type ThumbProcess struct {
@@ -19,31 +21,27 @@ type ThumbProcess struct {
 	Thumbnail string `json:"thumbnail_path"`
 }
 
-type ThumbProcessVideo struct {
-	Path string `json:"path"`
-}
-
-type ThumbProcessThumb struct {
-	Path string `json:"url"`
-}
-
-func New(cfg *config.Config) *Adapter {
-	return &Adapter{url: cfg.ThumbAPI.URL}
+func New(cfg *config.Config, email smtp.EmailService) *Adapter {
+	return &Adapter{
+		url:   cfg.ThumbAPI.URL,
+		Email: email,
+	}
 }
 
 func (a Adapter) ChangeStatus(status string, e domain.Event) error {
 	switch status {
 	case "complete":
 		e.ThumbPath = e.ID + "/thumbs.zip"
-		return a.notify(status, e)
+		return a.req(status, e)
 	case "failed":
-		return a.notify(status, e)
+		a.Email.Send(e.UserEmail)
+		return a.req(status, e)
 	}
 
 	return fmt.Errorf("invalid status: %s", status)
 }
 
-func (a Adapter) notify(status string, e domain.Event) error {
+func (a Adapter) req(status string, e domain.Event) error {
 	t := ThumbProcess{
 		ID:        e.ID,
 		Status:    status,

@@ -22,9 +22,9 @@ type Adapter struct {
 
 type ThumbProcess struct {
 	ID        string            `json:"id"`
+	UserEmail string            `json:"user_email"`
 	Video     ThumbProcessVideo `json:"video"`
 	Status    string            `json:"status"`
-	Error     string            `json:"error,omitempty"`
 	Thumbnail ThumbProcessThumb `json:"thumbnail"`
 }
 
@@ -63,6 +63,7 @@ func (a *Adapter) appendMessages(mes []types.Message) {
 
 		a.queue <- []domain.Event{{
 			ID:        e.ID,
+			UserEmail: e.UserEmail,
 			VideoPath: e.Video.Path,
 			Metadata:  m,
 		}}
