@@ -54,19 +54,30 @@ func (m *MockVideoProcessor) ExtractThumbnails(videoPath, thumbsDestDir string) 
 	return args.Error(0)
 }
 
+type MockSyncStatusAdapter struct {
+	mock.Mock
+}
+
+func (m *MockSyncStatusAdapter) ChangeStatus(status string, e domain.Event) error {
+	args := m.Called(status, e)
+	return args.Error(0)
+}
+
 func TestProcessVideo_Success(t *testing.T) {
 	queueAdapter := new(MockQueueAdapter)
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	syncStatusAdapter := new(MockSyncStatusAdapter)
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, syncStatusAdapter)
 
-	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
+	event := domain.Event{ID: "123", VideoPath: "s3://bucket/video.mp4"}
 
-	storageAdapter.On("DownloadFile", event.Path, "./videos/123/video").Return(nil)
+	storageAdapter.On("DownloadFile", event.VideoPath, "./videos/123/video").Return(nil)
 	videoProcessor.On("ExtractThumbnails", "./videos/123/video", "./videos/123/thumbs/thumb_%04d.png").Return(nil)
 	compressorAdapter.On("Compress", "./videos/123/thumbs", "thumbs.zip").Return(nil)
 	storageAdapter.On("UploadFile", "./videos/123/thumbs/thumbs.zip", "123/thumbs.zip").Return(nil)
+	syncStatusAdapter.On("ChangeStatus", mock.Anything, mock.Anything).Return(nil)
 	queueAdapter.On("Ack", event).Return()
 
 	service.processEvent(event)
@@ -82,11 +93,15 @@ func TestProcessVideo_FailToDownloadFile(t *testing.T) {
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	syncStatusAdapter := new(MockSyncStatusAdapter)
 
-	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, syncStatusAdapter)
 
-	storageAdapter.On("DownloadFile", event.Path, "./videos/123/video").Return(fmt.Errorf("download error"))
+	event := domain.Event{ID: "123", VideoPath: "s3://bucket/video.mp4"}
+
+	storageAdapter.On("DownloadFile", event.VideoPath, "./videos/123/video").Return(fmt.Errorf("download error"))
+	syncStatusAdapter.On("ChangeStatus", mock.Anything, mock.Anything).Return(nil)
+	queueAdapter.On("Ack", event).Return()
 
 	err := os.MkdirAll("./videos/123/thumbs", os.ModePerm)
 	assert.NoError(t, err)
@@ -105,14 +120,18 @@ func TestProcessVideo_FailToUploadFile(t *testing.T) {
 	storageAdapter := new(MockStorageAdapter)
 	compressorAdapter := new(MockCompressorAdapter)
 	videoProcessor := new(MockVideoProcessor)
-	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor)
+	syncStatusAdapter := new(MockSyncStatusAdapter)
 
-	event := domain.Event{ID: "123", Path: "s3://bucket/video.mp4"}
+	service := NewService(queueAdapter, storageAdapter, compressorAdapter, videoProcessor, syncStatusAdapter)
 
-	storageAdapter.On("DownloadFile", event.Path, "./videos/123/video").Return(nil)
+	event := domain.Event{ID: "123", VideoPath: "s3://bucket/video.mp4"}
+
+	storageAdapter.On("DownloadFile", event.VideoPath, "./videos/123/video").Return(nil)
 	videoProcessor.On("ExtractThumbnails", "./videos/123/video", "./videos/123/thumbs/thumb_%04d.png").Return(nil)
 	compressorAdapter.On("Compress", "./videos/123/thumbs", "thumbs.zip").Return(nil)
 	storageAdapter.On("UploadFile", "./videos/123/thumbs/thumbs.zip", "123/thumbs.zip").Return(fmt.Errorf("upload error"))
+	syncStatusAdapter.On("ChangeStatus", mock.Anything, mock.Anything).Return(nil)
+	queueAdapter.On("Ack", event).Return()
 
 	service.processEvent(event)
 

@@ -31,6 +31,10 @@ To correctly use the project, it is necessary to define a .env file, with the va
 
 * S3_BUCKET
 * SQS_QUEUE_URL
+* SMTP_HOST
+* SMTP_PORT
+* SMTP_PASSWORD
+* SMTP_FROM
 
 ## Executing with Docker (Compose)
 
