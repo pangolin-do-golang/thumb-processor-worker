@@ -64,6 +64,7 @@ func (s Service) StartQueue() {
 }
 
 func (s Service) processEvent(event domain.Event) {
+	defer s.queueAdapter.Ack(event)
 	fmt.Println("processando evento do vídeo", event.VideoPath)
 	zipPath, err := s.processVideo(event)
 	if err != nil {
@@ -78,7 +79,6 @@ func (s Service) processEvent(event domain.Event) {
 		return
 	}
 
-	s.queueAdapter.Ack(event)
 	if err = s.SyncStatusAdapter.ChangeStatus("complete", event); err != nil {
 		log.Println("erro ao atualizar status do vídeo:", err)
 	}
